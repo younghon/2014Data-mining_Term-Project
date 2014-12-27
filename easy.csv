@@ -1,0 +1,15 @@
+No,Location,Age,Marriage_Status,Gender,Loralty
+1,Urban,Below 21,Married,Female,Low
+2,Urban,Below 21,Married,Male,Low
+3,Suburban,Below 21,Married,Female,High
+4,Rural,Between 21 and 30,Married,Female,High
+5,Rural,Above 30,Single,Female,High
+6,Rural,Above 30,Single,Male,Low
+7,Suburban,Above 30,Single,Male,High
+8,Urban,Between 21 and 30,Married,Female,Low
+9,Urban,Above 30,Single,Female,High
+10,Rural,Between 21 and 30,Single,Female,High
+11,Urban,Between 21 and 30,Single,Male,High
+12,Suburban,Between 21 and 30,Married,Male,High
+13,Suburban,Below 21,Single,Female,High
+14,Rural,Between 21 and 30,Married,Male,Low
