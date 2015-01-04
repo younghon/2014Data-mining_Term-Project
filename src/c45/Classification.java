@@ -13,15 +13,11 @@ import java.util.Set;
 public class Classification {
 	static String finPath = "training.txt";
 	static BufferedWriter bw;
-	static int numAttributes;
-	static int classIndex;
-	static int customer_count = 0;
+	static int target_class_Index = 18;
 	static String[] attributes;
 	static HashMap<Integer,String[]> data = new HashMap<Integer,String[]>();
+	//static int customer_count = 0;
 	
-	public static boolean correction(){
-		return true;
-	}
 	
 	public static void main(String[] args) {
 		try {
@@ -33,11 +29,8 @@ public class Classification {
 			for(int i = 0; i < headers.length; i++)
 				attributes[i] = headers[i];
 			
-			numAttributes = headers.length - 1;
-			classIndex = 18;
-			
 			while(inputScanner.hasNextLine()){
-					customer_count++;
+					//customer_count++;
 					String line = inputScanner.nextLine();
 					String[] tokens = line.split(",");
 					String[] attr_value = new String[tokens.length];
@@ -69,13 +62,29 @@ public class Classification {
 			}
 			//System.out.println();
 		}
-		//
 		*/
 		
 		
 		Integer[] id = data.keySet().toArray(new Integer[data.size()]);
-		Integer[] candidate_attr = {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17};
-		treenode root = new treenode(id,candidate_attr,"");
+		//Integer[] candidate_attr = {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17};
+		HashMap<Integer,Integer> candidate_attr = new HashMap<Integer,Integer>();
+		candidate_attr.put(2,1);
+		candidate_attr.put(3,1);
+		candidate_attr.put(4,1);
+		candidate_attr.put(5,1);
+		candidate_attr.put(6,1);
+		candidate_attr.put(7,1);
+		candidate_attr.put(8,1);
+		candidate_attr.put(9,1);
+		candidate_attr.put(10,1);
+		candidate_attr.put(11,1);
+		candidate_attr.put(12,1);
+		candidate_attr.put(13,1);
+		candidate_attr.put(14,1);
+		candidate_attr.put(15,1);
+		candidate_attr.put(16,1);
+		candidate_attr.put(17,1);
+		Treenode root = new Treenode(id,candidate_attr,"");
 		root.dosomething();		
 		
 		//testing
@@ -84,17 +93,15 @@ public class Classification {
 			String line = inputScanner.nextLine();
 			
 			while(inputScanner.hasNextLine()){
-				customer_count++;
+				//customer_count++;
 				line = inputScanner.nextLine();
 				line = line.replace("\"", "");
 				String[] tokens = line.split(",");
-				treenode.passTree(root, tokens);
+				Treenode.passTree(root, tokens);
 			}
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
-		
-		//treenode.showTree(root);
 		
 	}
 	

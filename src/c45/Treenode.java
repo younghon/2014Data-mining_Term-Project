@@ -11,18 +11,19 @@ import java.util.Set;
 
 import c45.Classification;
 
-public class treenode {
+public class Treenode {
 	public Integer[] id;
-	public Integer[] candidate_attr;
+	//public Integer[] candidate_attr;
+	public HashMap<Integer,Integer> candidate_attr;
 	public String attrinNode;
-	
 	public boolean visited = false;
 	public double entropy = 0.0;
 	public int a_best;					//在此node中最佳分類屬性
-	public Integer[] nextnode_candidate_attr;
-	public ArrayList<treenode> child= new ArrayList<treenode>();
+	//public Integer[] nextnode_candidate_attr;
+	public HashMap<Integer,Integer> nextnode_candidate_attr;
+	public ArrayList<Treenode> child= new ArrayList<Treenode>();
 	
-	treenode(Integer[] id,Integer[] candidate_attr,String attrinNode){
+	Treenode(Integer[] id,HashMap<Integer,Integer> candidate_attr,String attrinNode){
 		this.id = id;
 		this.candidate_attr = candidate_attr;
 		this.attrinNode = attrinNode;
@@ -40,8 +41,8 @@ public class treenode {
 	}
 	
 	//將testing data丟入建好的decision tree做分類，推測其target_class
-	public static void passTree(treenode n, String[] test_data){
-		treenode node = n;
+	public static void passTree(Treenode n, String[] test_data){
+		Treenode node = n;
 		if(node.child.size()!=0){
 			//System.out.println("Attribute " + node.a_best + ": " + test_data[node.a_best]);
 			boolean flag = false;  //flag set true if the testing data find its attr(a_best in that level) in child 
@@ -65,16 +66,16 @@ public class treenode {
 			}
 		}else {
 			System.out.print("finish passing. Predict this data is in target_class\"");
-			System.out.println(treenode.leafClass(node) + "\"");
+			System.out.println(Treenode.leafClass(node) + "\"");
 			
 		}
 	}
 	
 	//傳入leafnode 判斷此leaf屬於哪一個class (1.全部customer屬於同class 2.多數決)
-	public static String leafClass(treenode leafnode) {
+	public static String leafClass(Treenode leafnode) {
 		HashMap<String,Integer> classes = new HashMap<String,Integer>();
 		for(int i=0;i<leafnode.id.length;i++){
-			String id_class = Classification.data.get(leafnode.id[i])[Classification.classIndex];
+			String id_class = Classification.data.get(leafnode.id[i])[Classification.target_class_Index];
 			if (classes.containsKey(id_class)) {
 				classes.put(id_class, classes.get(id_class)+1);
 			}else{
@@ -83,7 +84,7 @@ public class treenode {
 		}
 		
 		if(classes.size()==1)
-			return Classification.data.get(leafnode.id[0])[Classification.classIndex];
+			return Classification.data.get(leafnode.id[0])[Classification.target_class_Index];
 		else{
 			List<Map.Entry<String, Integer>> list_Data =
 		            new ArrayList<Map.Entry<String, Integer>>(classes.entrySet());
@@ -97,7 +98,7 @@ public class treenode {
 		}
 	}
 	
-	public static void showTree(treenode root){
+	public static void showTree(Treenode root){
 		if(root == null) return;
 
 		if(root.a_best!=-1)
@@ -134,10 +135,10 @@ public class treenode {
 		
 		HashMap<String,Integer> classes = new HashMap<String,Integer>();
 		for(int i=0;i<id.length;i++){
-			if (classes.containsKey(Classification.data.get(id[i])[Classification.classIndex])) {
-				classes.put(Classification.data.get(id[i])[Classification.classIndex],classes.get(Classification.data.get(id[i])[Classification.classIndex])+1);
+			if (classes.containsKey(Classification.data.get(id[i])[Classification.target_class_Index])) {
+				classes.put(Classification.data.get(id[i])[Classification.target_class_Index],classes.get(Classification.data.get(id[i])[Classification.target_class_Index])+1);
 			}else{
-				classes.put(Classification.data.get(id[i])[Classification.classIndex],1);	
+				classes.put(Classification.data.get(id[i])[Classification.target_class_Index],1);	
 			}
 		}
 		for(String classN:classes.keySet()){
@@ -149,82 +150,88 @@ public class treenode {
 	}
 	
 	public void set_attr(){
-		double[] candidate_attr_gain= new double[candidate_attr.length];
-		for(int i=0;i<candidate_attr.length;i++){
-			HashMap<String,HashMap<String, Integer>> tmp = new HashMap<String,HashMap<String, Integer>>();
-			for(int j=0;j<id.length;j++){
-				String id_attr = Classification.data.get(id[j])[candidate_attr[i]];
-				String id_class = Classification.data.get(id[j])[Classification.classIndex];
-				if(tmp.containsKey(id_attr)){
-					if (tmp.get(id_attr).containsKey(id_class)) {
-						tmp.get(id_attr).put(id_class, tmp.get(id_attr).get(id_class)+1);
-					}else {
-						tmp.get(id_attr).put(id_class, 1);
-					}
-				}else{
-					HashMap<String, Integer> addin = new HashMap<String, Integer>();
-					addin.put(id_class, 1);
-					tmp.put(id_attr, addin);
-				}
-			}
-			
-			ArrayList<Values> values = new ArrayList<Values>();
-			
-			for(String s: tmp.keySet()){
-				int classesCount = 0;
-				for(String ss: tmp.get(s).keySet()){
-					classesCount += tmp.get(s).get(ss);						
-				}
-
-				double I = 0.0;
-				for(String ss : tmp.get(s).keySet()){
-					I += (-1 * (tmp.get(s).get(ss)/(double)classesCount)) * (Math.log((tmp.get(s).get(ss)/(double)classesCount)) / Math.log(2));
-				}
+		HashMap<Integer,Double> candidate_attr_gain= new HashMap<Integer,Double>();
+		for(Integer i:candidate_attr.keySet()){
+			if(candidate_attr.get(i)==1){
+				candidate_attr_gain.put(i, categorical_gain_ratio(i));	//算出以各candidate attribute做分類的Gain ratio
+			}else if(candidate_attr.get(i)==0){
 				
-				values.add(new Values(s, I, classesCount));					
 			}
-			
-			int totalClasses = id.length;
-			double E = 0.0;
-			double IV = 0.0;		//Information Value
-			for(Values v : values){
-				IV += (-1 * (v.classesCount/(double)totalClasses) * (Math.log((v.classesCount/(double)totalClasses)) / Math.log(2)));
-				E += (v.classesCount/(double)totalClasses) * v.I;
-			}
-			
-			//System.out.println("IV =" + IV);
-			//System.out.println("E =" + E);
-			candidate_attr_gain[i] = (entropy - E) / IV;	//算出以各candidate attribute做分類的Gain ratio
-			
 		}
 		
-		int highest_gain_index = 0;				//挑選Gain ratio最大者為最佳分類attribute
-		double Max = 0.0;
-		for(int i=0;i<candidate_attr_gain.length;i++){
+		int highest_gain_attr = 0;				
+		double Max = 0.0;						//挑選Gain ratio最大者為最佳分類attribute
+		for(Integer i:candidate_attr_gain.keySet()){
 			//System.out.println(candidate_attr[i]+": "+candidate_attr_gain[i]);
-			if(candidate_attr_gain[i] > Max){
-				highest_gain_index = i;
-				Max = candidate_attr_gain[i];
+			if(candidate_attr_gain.get(i) > Max){
+				highest_gain_attr = i;
+				Max = candidate_attr_gain.get(i);
 			}
 		}
-		
+		a_best = highest_gain_attr;
 		//System.out.println("highest_gain_index: " + highest_gain_index);
 		//System.out.println("highest_gain_attr: " + candidate_attr[highest_gain_index]);
-		a_best = candidate_attr[highest_gain_index];
-		ArrayList<Integer> nextcandidate = new ArrayList<Integer>();
+		/*ArrayList<Integer> nextcandidate = new ArrayList<Integer>();
 		for(int i=0;i<candidate_attr.length;i++){
 			if(candidate_attr[i] != a_best){
-				nextcandidate.add(candidate_attr[i]);	//刪除此層分類最佳分類的attribute傳至child node
+				nextcandidate.add(candidate_attr[i]);	
 			}
-		}
-		nextnode_candidate_attr = nextcandidate.toArray(new Integer[nextcandidate.size()]);
+		}*/
+		//刪除此層分類最佳分類的attribute傳至child node
+		nextnode_candidate_attr = new HashMap<Integer, Integer>(candidate_attr);
+		nextnode_candidate_attr.remove(a_best);
 	}
 	
+	public double categorical_gain_ratio(int attr_index){
+		HashMap<String,HashMap<String, Integer>> tmp = new HashMap<String,HashMap<String, Integer>>();
+		for(int i=0;i<id.length;i++){
+			String id_attr = Classification.data.get(id[i])[attr_index];
+			String id_class = Classification.data.get(id[i])[Classification.target_class_Index];
+			if(tmp.containsKey(id_attr)){
+				if (tmp.get(id_attr).containsKey(id_class)) {
+					tmp.get(id_attr).put(id_class, tmp.get(id_attr).get(id_class)+1);
+				}else {
+					tmp.get(id_attr).put(id_class, 1);
+				}
+			}else{
+				HashMap<String, Integer> addin = new HashMap<String, Integer>();
+				addin.put(id_class, 1);
+				tmp.put(id_attr, addin);
+			}
+		}
+		
+		ArrayList<Values> values = new ArrayList<Values>();
+		for(String s: tmp.keySet()){
+			int classesCount = 0;
+			for(String ss: tmp.get(s).keySet()){
+				classesCount += tmp.get(s).get(ss);						
+			}
+
+			double I = 0.0;
+			for(String ss : tmp.get(s).keySet()){
+				I += (-1 * (tmp.get(s).get(ss)/(double)classesCount)) * (Math.log((tmp.get(s).get(ss)/(double)classesCount)) / Math.log(2));
+			}
+			
+			values.add(new Values(s, I, classesCount));					
+		}
+		
+		int totalClasses = id.length;
+		double E = 0.0;
+		double IV = 0.0;		//Information Value
+		for(Values v : values){
+			IV += (-1 * (v.classesCount/(double)totalClasses) * (Math.log((v.classesCount/(double)totalClasses)) / Math.log(2)));
+			E += (v.classesCount/(double)totalClasses) * v.I;
+		}
+		//System.out.println("IV =" + IV);
+		//System.out.println("E =" + E);
+		
+		return (entropy - E) / IV;
+	}
 	public boolean growthornot(){
 		boolean growth_or_not = true;
 		Set<String> tmp = new HashSet<String>();
 		for(int i=0;i<id.length;i++){
-			String id_class = Classification.data.get(id[i])[Classification.classIndex];
+			String id_class = Classification.data.get(id[i])[Classification.target_class_Index];
 			tmp.add(id_class);
 		}
 		if (tmp.size()==1) {			//在node中的所有customer都屬於
@@ -232,7 +239,7 @@ public class treenode {
 			attrinNode = tmp.toArray(new String[tmp.size()])[0];
 			a_best = -1;
 		}
-		if(candidate_attr.length==0){	//已經沒有attribute可以用來分類了
+		if(candidate_attr.size()==0){	//已經沒有attribute可以用來分類了
 			growth_or_not = false;
 		}
 		return growth_or_not;
@@ -257,7 +264,7 @@ public class treenode {
 				}
 			}
 			Integer[] nextId = addintonextId.toArray(new Integer[addintonextId.size()]);
-			treenode node = new treenode(nextId,nextnode_candidate_attr, s);
+			Treenode node = new Treenode(nextId,nextnode_candidate_attr, s);
 			child.add(node);
 		}
 	}
