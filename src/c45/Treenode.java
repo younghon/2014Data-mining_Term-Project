@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -13,19 +14,18 @@ import c45.Classification;
 
 public class Treenode {
 	public Integer[] id;
-	//public Integer[] candidate_attr;
-	public HashMap<Integer,Integer> candidate_attr;
 	public String attrinNode;
 	public boolean visited = false;
 	public double entropy = 0.0;
-	public int a_best;					//在此node中最佳分類屬性
-	//public Integer[] nextnode_candidate_attr;
-	public HashMap<Integer,Integer> nextnode_candidate_attr;
+	public int a_best;					//在此node中最佳分類屬性同一個class
+	public int best_list_index;
+	List<Feature> candidate_feature = new ArrayList<Feature>();
+	List<Feature> nextnode_candidate_feature = new ArrayList<Feature>();
 	public ArrayList<Treenode> child= new ArrayList<Treenode>();
 	
-	Treenode(Integer[] id,HashMap<Integer,Integer> candidate_attr,String attrinNode){
+	Treenode(Integer[] id,List<Feature> candidate_feature,String attrinNode){
 		this.id = id;
-		this.candidate_attr = candidate_attr;
+		this.candidate_feature = candidate_feature;
 		this.attrinNode = attrinNode;
 	}
 	
@@ -102,7 +102,7 @@ public class Treenode {
 		if(root == null) return;
 
 		if(root.a_best!=-1)
-			System.out.print(root.attrinNode + "_" + root.id.length + "_" + Classification.attributes[root.a_best]);
+			System.out.print(root.attrinNode + "_" + root.id.length + "_" + Classification.Header.get(root.a_best));
 		else 
 			System.out.print(root.attrinNode + "_" + root.id.length);
 		root.visited = true;
@@ -151,24 +151,23 @@ public class Treenode {
 	
 	public void set_attr(){
 		HashMap<Integer,Double> candidate_attr_gain= new HashMap<Integer,Double>();
-		for(Integer i:candidate_attr.keySet()){
-			if(candidate_attr.get(i)==1){
-				candidate_attr_gain.put(i, categorical_gain_ratio(i));	//算出以各candidate attribute做分類的Gain ratio
-			}else if(candidate_attr.get(i)==0){
-				candidate_attr_gain.put(i, continuous_gain_ratio(i));
+		for(int i=0; i<candidate_feature.size(); i++){
+			if(!candidate_feature.get(i).isContinuous()){
+				//算出以各candidate attribute做分類的Gain ratio
+				candidate_attr_gain.put(candidate_feature.get(i).getFeature_index(), categorical_gain_ratio(candidate_feature.get(i)));
+			}else if(candidate_feature.get(i).isContinuous()){
+				candidate_attr_gain.put(candidate_feature.get(i).getFeature_index(), continuous_gain_ratio(candidate_feature.get(i)));
 			}
 		}
-		
-		int highest_gain_attr = 0;				
+					
 		double Max = 0.0;						//挑選Gain ratio最大者為最佳分類attribute
 		for(Integer i:candidate_attr_gain.keySet()){
-			//System.out.println(candidate_attr[i]+": "+candidate_attr_gain[i]);
+			//System.out.println("candidate_attr"+i+ " gain ratio: "+candidate_attr_gain.get(i));
 			if(candidate_attr_gain.get(i) > Max){
-				highest_gain_attr = i;
+				a_best = i;
 				Max = candidate_attr_gain.get(i);
 			}
 		}
-		a_best = highest_gain_attr;
 		//System.out.println("highest_gain_index: " + highest_gain_index);
 		//System.out.println("highest_gain_attr: " + candidate_attr[highest_gain_index]);
 		/*ArrayList<Integer> nextcandidate = new ArrayList<Integer>();
@@ -178,71 +177,81 @@ public class Treenode {
 			}
 		}*/
 		//刪除此層分類最佳分類的attribute傳至child node
-		nextnode_candidate_attr = new HashMap<Integer, Integer>(candidate_attr);
-		nextnode_candidate_attr.remove(a_best);
+		nextnode_candidate_feature = new ArrayList<Feature>(candidate_feature);
+		for(int i=0;i<candidate_feature.size();i++){
+			if(candidate_feature.get(i).getFeature_index()==a_best){
+				best_list_index=i;
+				nextnode_candidate_feature.remove(i);
+				break;
+			}
+		}
 	}
 	
-	public double continuous_gain_ratio(int attr_index){
-		List<Pair> temp = new ArrayList<Pair>();
-		HashMap<Integer,HashMap<String, Integer>> tmp = new HashMap<Integer,HashMap<String, Integer>>();
+	public double continuous_gain_ratio(Feature feature){
+		int attr_index = feature.getFeature_index();
+		List<Pair> tmp = new ArrayList<Pair>();
 		for(int i=0;i<id.length;i++){
 			Integer id_attr = Integer.parseInt(Classification.data.get(id[i])[attr_index]);
 			String id_class = Classification.data.get(id[i])[Classification.target_class_Index];
-			if(tmp.containsKey(id_attr)){
-				if (tmp.get(id_attr).containsKey(id_class)) {
-					tmp.get(id_attr).put(id_class, tmp.get(id_attr).get(id_class)+1);
-				}else {
-					tmp.get(id_attr).put(id_class, 1);
-				}
-			}else{
-				HashMap<String, Integer> addin = new HashMap<String, Integer>();
-				addin.put(id_class, 1);
-				tmp.put(id_attr, addin);
-			}
+			tmp.add(new Pair(id_attr, id_class));
 		}
 		
-		for(Integer p:tmp.keySet()){
-			for(Integer s:tmp.keySet()){
-				double I1=0.0;
-				double I2=0.0;
-				double I=0.0;
+		Collections.sort(tmp, new Comparator<Pair>() {
+		            public int compare(Pair o1, Pair o2) {
+		                return o1.getId_attr()-o2.getId_attr();
+		            }
+		});
+		
+		double max_I=0.0;
+		int compare = tmp.get(0).getId_attr();
+		for(int i=0;i<tmp.size();i++){
+			if(compare<tmp.get(i).getId_attr()){
+				double e1=0.0;
+				double e2=0.0;
+				double e=0.0;
+				double IV=0.0;
 				HashMap<String,Integer> count1 = new HashMap<String,Integer>();
 				HashMap<String,Integer> count2 = new HashMap<String,Integer>();
 				int count1_total=0;
 				int count2_total=0;
-				if(s>p){
-					for(String className:tmp.get(s).keySet()){
-						count1_total += tmp.get(s).get(className);
-						if(count1.containsKey(className)){
-							count1.put(className, count1.get(className) + tmp.get(s).get(className));
-						}else{
-							count1.put(className, tmp.get(s).get(className));
-						}
-					}
-				}else if(s<=p){	
-					for(String className:tmp.get(s).keySet()){
-						count2_total += tmp.get(s).get(className);
-						if(count2.containsKey(className)){
-							count2.put(className, count2.get(className) + tmp.get(s).get(className));
-						}else{
-							count2.put(className, tmp.get(s).get(className));
-						}
+				for(int j=0;j<i;j++){
+					count1_total++;
+					if(count1.containsKey(tmp.get(j).getId_class())){
+						count1.put(tmp.get(j).getId_class(), count1.get(tmp.get(j).getId_class())+1);
+					}else{
+						count1.put(tmp.get(j).getId_class(),1);
 					}
 				}
-				
+				for(int j=i;j<tmp.size();j++){
+					count2_total++;
+					if(count2.containsKey(tmp.get(j).getId_class())){
+						count2.put(tmp.get(j).getId_class(), count2.get(tmp.get(j).getId_class())+1);
+					}else{
+						count2.put(tmp.get(j).getId_class(),1);
+					}
+				}
 				for(String x:count1.keySet()){
-					I1 += (-1 * (count1.get(x)/(double)count1_total)) * (Math.log((count1.get(x)/(double)count1_total)) / Math.log(2));
+					e1 += (-1 * (count1.get(x)/(double)count1_total)) * (Math.log((count1.get(x)/(double)count1_total)) / Math.log(2));
 				}
 				for(String x:count2.keySet()){
-					I2 += (-1 * (count2.get(x)/(double)count2_total)) * (Math.log((count2.get(x)/(double)count2_total)) / Math.log(2));
+					e2 += (-1 * (count2.get(x)/(double)count2_total)) * (Math.log((count2.get(x)/(double)count2_total)) / Math.log(2));
 				}
-				I=(count1_total/count1_total+count2_total)*I1+(count2_total/count1_total+count2_total)*I2;
+				e=(count1_total/(double)(count1_total+count2_total))*e1+(count2_total/(double)(count1_total+count2_total))*e2;
+				IV = (-1 * (count1_total/(double)(count1_total+count2_total)) * (Math.log((count1_total/(double)(count1_total+count2_total))) / Math.log(2)))
+						+(-1 * (count2_total/(double)(count1_total+count2_total)) * (Math.log((count2_total/(double)(count1_total+count2_total))) / Math.log(2)));
+				
+				if(max_I < (entropy-e)/IV){
+					max_I = (entropy-e)/IV;
+					feature.setSplit_value(compare);
+				}
+				compare = tmp.get(i).getId_attr();
 			}
-		}
-		return 0.0;
+		}	
+		return max_I;
 	}
 	
-	public double categorical_gain_ratio(int attr_index){
+	public double categorical_gain_ratio(Feature feature){
+		int attr_index = feature.getFeature_index();
 		HashMap<String,HashMap<String, Integer>> tmp = new HashMap<String,HashMap<String, Integer>>();
 		for(int i=0;i<id.length;i++){
 			String id_attr = Classification.data.get(id[i])[attr_index];
@@ -288,45 +297,88 @@ public class Treenode {
 		return (entropy - E) / IV;
 	}
 	public boolean growthornot(){
-		boolean growth_or_not = true;
-		Set<String> tmp = new HashSet<String>();
+		HashMap<String,Integer> tmp = new HashMap<String,Integer>();
 		for(int i=0;i<id.length;i++){
 			String id_class = Classification.data.get(id[i])[Classification.target_class_Index];
-			tmp.add(id_class);
+			if(tmp.containsKey(id_class)){
+				tmp.put(id_class, tmp.get(id_class)+1);
+			}else{
+				tmp.put(id_class,1);
+			}
 		}
-		if (tmp.size()==1) {			//在node中的所有customer都屬於
-			growth_or_not = false;
-			attrinNode = tmp.toArray(new String[tmp.size()])[0];
+		if (tmp.size()==1) {			//在該node中的所有customer都屬於
+			attrinNode = "target_class: " + Classification.data.get(id[0])[Classification.target_class_Index];
 			a_best = -1;
+			return false;
 		}
-		if(candidate_attr.size()==0){	//已經沒有attribute可以用來分類了
-			growth_or_not = false;
+		if(candidate_feature.size()==0){	//已經沒有attribute可以用來分類了(取數量最多的當作預測class)
+			int maxV = -1;
+			Iterator keys = tmp.keySet().iterator();
+			while(keys.hasNext()){
+				   Object key = keys.next();
+				   Integer value = tmp.get(key);
+				   if(value > maxV){
+					   maxV=value;
+					   attrinNode = "target_class: "+ key.toString() +" (guess)";
+				   }
+			}
+			a_best = -1;
+			return false;
 		}
-		return growth_or_not;
+		return true;
 	}
 	
 	public void growthTree(){
-		HashMap<String,Integer> tmp = new HashMap<String,Integer>();
-		for(int i=0;i<id.length;i++){
-			String id_attr = Classification.data.get(id[i])[a_best];
-			if(tmp.containsKey(id_attr)){				//依照此node中的最佳分類attribute分出幾類
-				tmp.put(id_attr, tmp.get(id_attr)+1);
+		//System.out.println("a_best: "+ a_best);
+		if(!candidate_feature.get(best_list_index).isContinuous()){
+			System.out.println("Use categorical attribute "+ candidate_feature.get(best_list_index).getName() +" to growth");
+			HashMap<String,Integer> tmp = new HashMap<String,Integer>();
+			for(int i=0;i<id.length;i++){
+				String id_attr = Classification.data.get(id[i])[a_best];
+				if(tmp.containsKey(id_attr)){				//依照此node中的最佳分類attribute分出幾類
+					tmp.put(id_attr, tmp.get(id_attr)+1);
+				}else{
+					tmp.put(id_attr, 1);
+				}
+			}
+			for (String s: tmp.keySet()) {
+				ArrayList<Integer> addintonextId = new ArrayList<Integer>();
+				for(int i=0;i<id.length;i++){				//相同attribute的customer記錄起來傳至child node
+					if(Classification.data.get(id[i])[a_best].equals(s)){
+						addintonextId.add(id[i]);
+					}
+				}
+				Integer[] nextId = addintonextId.toArray(new Integer[addintonextId.size()]);
+				Treenode node = new Treenode(nextId,nextnode_candidate_feature, s);
+				//System.out.println(candidate_feature.get(best_list_index).getName()+" "+s+": "+nextId.length);
+				child.add(node);
+			}
+		}else if(candidate_feature.get(best_list_index).isContinuous()){
+			System.out.println("Use continuous attribute "+ candidate_feature.get(best_list_index).getName() +" to growth");
+			if(candidate_feature.get(best_list_index).getSplit_value()==-1){
+				System.out.println("Wrong: Use continuous attribute but splilt_index is not set.");
 			}else{
-				tmp.put(id_attr, 1);
+				ArrayList<Integer> addinto1Id = new ArrayList<Integer>();
+				ArrayList<Integer> addinto2Id = new ArrayList<Integer>();
+				for(int i=0;i<id.length;i++){				//<=split_value一類; >split_value一類
+					if(Integer.parseInt(Classification.data.get(id[i])[a_best])<=candidate_feature.get(best_list_index).getSplit_value()){
+						addinto1Id.add(id[i]);
+					}else{
+						addinto2Id.add(id[i]);
+					}
+				}
+				Integer[] next1Id = addinto1Id.toArray(new Integer[addinto1Id.size()]);
+				Integer[] next2Id = addinto2Id.toArray(new Integer[addinto2Id.size()]);
+				Treenode node1 = new Treenode(next1Id,nextnode_candidate_feature, candidate_feature.get(best_list_index).getName()+"<="+candidate_feature.get(best_list_index).getSplit_value());
+				Treenode node2 = new Treenode(next1Id,nextnode_candidate_feature, candidate_feature.get(best_list_index).getName()+">"+candidate_feature.get(best_list_index).getSplit_value());
+				System.out.println(candidate_feature.get(best_list_index).getName()+"<="+candidate_feature.get(best_list_index).getSplit_value()+": "+next1Id.length);
+				System.out.println(candidate_feature.get(best_list_index).getName()+">"+candidate_feature.get(best_list_index).getSplit_value()+": "+next2Id.length);
+				child.add(node1);
+				child.add(node2);
 			}
 		}
 		
-		for (String s: tmp.keySet()) {
-			ArrayList<Integer> addintonextId = new ArrayList<Integer>();
-			for(int i=0;i<id.length;i++){				//相同attribute的customer記錄起來傳至child node
-				if(Classification.data.get(id[i])[a_best].equals(s)){
-					addintonextId.add(id[i]);
-				}
-			}
-			Integer[] nextId = addintonextId.toArray(new Integer[addintonextId.size()]);
-			Treenode node = new Treenode(nextId,nextnode_candidate_attr, s);
-			child.add(node);
-		}
+		
 	}
 	
 	
