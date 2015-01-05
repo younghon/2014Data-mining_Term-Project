@@ -83,7 +83,7 @@ public class Classification {
 		candidate_attr.put(14,1);
 		candidate_attr.put(15,1);
 		candidate_attr.put(16,1);
-		candidate_attr.put(17,1);
+		candidate_attr.put(17,0);
 		Treenode root = new Treenode(id,candidate_attr,"");
 		root.dosomething();		
 		

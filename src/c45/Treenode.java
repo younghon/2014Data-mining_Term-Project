@@ -155,7 +155,7 @@ public class Treenode {
 			if(candidate_attr.get(i)==1){
 				candidate_attr_gain.put(i, categorical_gain_ratio(i));	//算出以各candidate attribute做分類的Gain ratio
 			}else if(candidate_attr.get(i)==0){
-				
+				candidate_attr_gain.put(i, continuous_gain_ratio(i));
 			}
 		}
 		
@@ -180,6 +180,66 @@ public class Treenode {
 		//刪除此層分類最佳分類的attribute傳至child node
 		nextnode_candidate_attr = new HashMap<Integer, Integer>(candidate_attr);
 		nextnode_candidate_attr.remove(a_best);
+	}
+	
+	public double continuous_gain_ratio(int attr_index){
+		List<Pair> temp = new ArrayList<Pair>();
+		HashMap<Integer,HashMap<String, Integer>> tmp = new HashMap<Integer,HashMap<String, Integer>>();
+		for(int i=0;i<id.length;i++){
+			Integer id_attr = Integer.parseInt(Classification.data.get(id[i])[attr_index]);
+			String id_class = Classification.data.get(id[i])[Classification.target_class_Index];
+			if(tmp.containsKey(id_attr)){
+				if (tmp.get(id_attr).containsKey(id_class)) {
+					tmp.get(id_attr).put(id_class, tmp.get(id_attr).get(id_class)+1);
+				}else {
+					tmp.get(id_attr).put(id_class, 1);
+				}
+			}else{
+				HashMap<String, Integer> addin = new HashMap<String, Integer>();
+				addin.put(id_class, 1);
+				tmp.put(id_attr, addin);
+			}
+		}
+		
+		for(Integer p:tmp.keySet()){
+			for(Integer s:tmp.keySet()){
+				double I1=0.0;
+				double I2=0.0;
+				double I=0.0;
+				HashMap<String,Integer> count1 = new HashMap<String,Integer>();
+				HashMap<String,Integer> count2 = new HashMap<String,Integer>();
+				int count1_total=0;
+				int count2_total=0;
+				if(s>p){
+					for(String className:tmp.get(s).keySet()){
+						count1_total += tmp.get(s).get(className);
+						if(count1.containsKey(className)){
+							count1.put(className, count1.get(className) + tmp.get(s).get(className));
+						}else{
+							count1.put(className, tmp.get(s).get(className));
+						}
+					}
+				}else if(s<=p){	
+					for(String className:tmp.get(s).keySet()){
+						count2_total += tmp.get(s).get(className);
+						if(count2.containsKey(className)){
+							count2.put(className, count2.get(className) + tmp.get(s).get(className));
+						}else{
+							count2.put(className, tmp.get(s).get(className));
+						}
+					}
+				}
+				
+				for(String x:count1.keySet()){
+					I1 += (-1 * (count1.get(x)/(double)count1_total)) * (Math.log((count1.get(x)/(double)count1_total)) / Math.log(2));
+				}
+				for(String x:count2.keySet()){
+					I2 += (-1 * (count2.get(x)/(double)count2_total)) * (Math.log((count2.get(x)/(double)count2_total)) / Math.log(2));
+				}
+				I=(count1_total/count1_total+count2_total)*I1+(count2_total/count1_total+count2_total)*I2;
+			}
+		}
+		return 0.0;
 	}
 	
 	public double categorical_gain_ratio(int attr_index){
