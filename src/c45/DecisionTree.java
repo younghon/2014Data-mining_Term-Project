@@ -79,7 +79,7 @@ public class DecisionTree extends JPanel implements TreeSelectionListener {
  
         for(int i=0;i<root.child.size();i++){
         	if(root.child.get(i).a_best == -1){
-        		continue;
+        		//continue;
         	}
         	newTop = new DefaultMutableTreeNode(root.candidate_feature.get(root.best_list_index).getName() + "   (" + root.child.get(i).attrinNode + ")");
         	top.add(newTop);

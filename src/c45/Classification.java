@@ -15,9 +15,10 @@ import com.opencsv.CSVReader;
 
 
 public class Classification {
-	static String finPath = "customer_card.csv";
+	static String finPath_training = "customer_card-0.7-Training.txt";
+	static String finPath_testing = "customer_card-Testing.txt";
 	static BufferedWriter bw;
-	static int target_class_Index = 18;
+	static int target_class_Index = 16;
 	static ArrayList<String> Header = new ArrayList<String>();
 	static HashMap<Integer,String[]> data = new HashMap<Integer,String[]>();
 	static Treenode root;
@@ -26,7 +27,7 @@ public class Classification {
 	
 	public static void main(String[] args) {
 		try {
-			CSVReader reader = new CSVReader(new FileReader(finPath));
+			CSVReader reader = new CSVReader(new FileReader(finPath_training));
 		    String[] nextLine;
 		    nextLine = reader.readNext();
 			for(int i = 0; i < nextLine.length; i++){
@@ -66,9 +67,9 @@ public class Classification {
 		passFeature.put("total_children", true);
 		passFeature.put("num_children_at_home", true);
 		passFeature.put("education", false);
-		passFeature.put("member_card", false);
 		passFeature.put("age", true);
-												
+		passFeature.put("year_income", true);		
+		
 		List<Feature> candidate_feature = new ArrayList<Feature>();
 		for(String candidateName: passFeature.keySet()){
 			candidate_feature.add(new Feature(candidateName, passFeature.get(candidateName)));
@@ -84,16 +85,12 @@ public class Classification {
 		
 		//testing
 		try {
-			Scanner inputScanner = new Scanner(new File(finPath));
-			String line = inputScanner.nextLine();
+			CSVReader reader = new CSVReader(new FileReader(finPath_testing));
+		    String[] nextLine = reader.readNext();
+			while ((nextLine = reader.readNext()) != null) {
+				Treenode.passTree(root, nextLine);
+		    }	
 			
-			while(inputScanner.hasNextLine()){
-				//customer_count++;
-				line = inputScanner.nextLine();
-				line = line.replace("\"", "");
-				String[] tokens = line.split(",");
-				//Treenode.passTree(root, tokens);
-			}
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
