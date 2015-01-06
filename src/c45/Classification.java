@@ -17,6 +17,8 @@ import com.opencsv.CSVReader;
 public class Classification {
 	static String finPath_training = "customer_card-0.7-Training.txt";
 	static String finPath_testing = "customer_card-Testing.txt";
+	//static String finPath_training = "STULONG-Death-data-0.7-Training.txt";
+	//static String finPath_testing = "STULONG-Death-data-0.7-Testing.txt";
 	static BufferedWriter bw;
 	static int target_class_Index = 16;
 	static ArrayList<String> Header = new ArrayList<String>();

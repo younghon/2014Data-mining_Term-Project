@@ -21,8 +21,8 @@ public class Feature {
 	public boolean isContinuous() {
 		return continuous;
 	}
-	public void setSplit_value(int split_index) {
-		this.split_value = split_index;
+	public void setSplit_value(int split_value) {
+		this.split_value = split_value;
 	}
 	public int getSplit_value() {
 		return split_value;
