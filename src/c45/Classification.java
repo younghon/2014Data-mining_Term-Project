@@ -89,10 +89,12 @@ public class Classification {
 		try {
 			CSVReader reader = new CSVReader(new FileReader(finPath_testing));
 		    String[] nextLine = reader.readNext();
+		    Counting c = new Counting();
 			while ((nextLine = reader.readNext()) != null) {
-				Treenode.passTree(root, nextLine);
+				Counting.isCorrect(nextLine);
+				//System.out.println(Counting.passTree(root, nextLine));
 		    }	
-			
+			//System.out.println("Accuracy: "+ c.getAccuracy());
 		} catch(IOException e) {
 			e.printStackTrace();
 		}

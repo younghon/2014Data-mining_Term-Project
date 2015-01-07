@@ -128,10 +128,9 @@ public class Treenode {
 			   Integer value = tmp.get(key);
 			   if(value > maxV){
 				   maxV=value;
-				   Guess = key.toString() +" (guess)";
+				   Guess = key.toString();
 			   }
-		}
-		
+		}		
 		return Guess;
 	}
 	
@@ -333,48 +332,6 @@ public class Treenode {
 				child.add(node2);
 			}
 		}	
-	}
-	
-	//將testing data丟入建好的decision tree做分類，推測其target_class
-	public static void passTree(Treenode node, String[] test_data){
-		if(node.child.size()!=0){
-			boolean flag = false;  //flag set true if the testing data find its attr(a_best in that level) in child 
-			//類別型pass
-			if(!node.candidate_feature.get(node.best_list_index).isContinuous()){
-				for(int i=0;i<node.child.size();i++){
-					String attr = Classification.data.get(node.child.get(i).id[0])[node.a_best];
-					if(test_data[node.a_best].equals(attr)){
-						node = node.child.get(i);
-						flag = true;
-						break;
-					}
-				}
-			}else if(node.candidate_feature.get(node.best_list_index).isContinuous()){
-			//數值型pass
-				if(Integer.parseInt(test_data[node.a_best])<=Integer.parseInt(node.child.get(0).attrinNode.split("<=")[1])){
-					node = node.child.get(0);
-				}else{
-					node = node.child.get(1);
-				}
-				flag=true;		
-			}
-			if(flag){
-				passTree(node, test_data);
-			}else{
-				for(int i=0;i<test_data.length;i++){
-					System.out.print(test_data[i]+" ");
-				}
-				System.out.println();
-				System.out.print("The attribute\""+test_data[node.a_best]);
-				System.out.println("\" can't pass at this level.   Guess: " + node.guess());
-			}
-		}else {
-			/*for(int i=0;i<test_data.length;i++){
-				System.out.print(test_data[i]+" ");
-			}
-			System.out.println();*/
-			System.out.println("Finish passing. Predict target_class: "+ node.leafnode_class);		
-		}
 	}
 	
 }
