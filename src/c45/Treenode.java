@@ -274,7 +274,7 @@ public class Treenode {
 				   Integer value = tmp.get(key);
 				   if(value > maxV){
 					   maxV=value;
-					   leafnode_class = key.toString() +" (guess)";
+					   leafnode_class = key.toString();
 				   }
 			}
 			a_best = -1;

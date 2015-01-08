@@ -1,37 +1,86 @@
 package c45;
 
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+
+import com.opencsv.CSVReader;
 
 public class Counting {
-	public static HashMap<String, Integer> actualCount = new HashMap<String, Integer>();
-	public static HashMap<String, Integer> predictCount = new HashMap<String, Integer>(); 
-	
-	
-	
-	public static boolean isCorrect(String[] s){
-		String predictClass = passTree(Classification.root, s);
-		if(actualCount.containsKey(s[Classification.target_class_Index])){
-			actualCount.put(s[Classification.target_class_Index], actualCount.get(s[Classification.target_class_Index])+1);
-		}else{
-			actualCount.put(s[Classification.target_class_Index], 1);
-		}
-		if(predictCount.containsKey(predictClass)){
-			predictCount.put(predictClass, predictCount.get(predictClass)+1);
-		}else{
-			predictCount.put(predictClass, 1);
-		}
-		
-		System.out.println(predictClass);
-		if(s[Classification.target_class_Index].equals(predictClass)){
+	public int target_Index=-1;
+	public HashMap<String, ConfusionMatrix> countingMap = new HashMap<String, ConfusionMatrix>();
 
+	//Initialize target_Index and countingMap
+	Counting(String testingFile, String targetClass) {
+		try {
+			CSVReader reader = new CSVReader(new FileReader(testingFile));
+		    String[] nextLine = reader.readNext();
+		    for(int i=0;i<nextLine.length;i++){
+		    	if(nextLine[i].equals(targetClass)){
+		    		this.target_Index=i;
+		    	}
+		    }
+			Set<String> targetSet = new HashSet<String>();
+		    //掃一次testing file看看target class總共有幾類
+			while ((nextLine = reader.readNext()) != null) {
+				targetSet.add(nextLine[target_Index]);
+		    }
+			
+			for(String className:targetSet){
+				countingMap.put(className, new ConfusionMatrix());
+			}
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+	public boolean isCorrect(String[] s){
+		String predictClass = passTree(Classification.root, s);
+		//System.out.println(predictClass);
+		
+		if(s[target_Index].equals(predictClass)){				//猜對: 正確的類TP++,其他類TN++
+			this.countingMap.get(s[target_Index]).addTP();
+			for(String className: countingMap.keySet()){
+				if(!className.equals(s[target_Index])){
+					this.countingMap.get(className).addTN();
+				}
+			}
 			return true;
-		}else{
+		}else{													//猜錯: 實際類FN++,推測類FP++,其他類TN++
+			this.countingMap.get(s[target_Index]).addFN();
+			this.countingMap.get(predictClass).addFP();
+			for(String className: countingMap.keySet()){
+				if(!className.equals(s[target_Index]) && !className.equals(predictClass)){
+					this.countingMap.get(className).addTN();
+				}
+			}
 			return false;
 		}
 	}
 	
+	public void getResult(){
+		double totalAccuracy=0.0;
+		double totalPrecision=0.0;
+		double totalRecall=0.0;
+		for(String className: countingMap.keySet()){
+			totalAccuracy += countingMap.get(className).getAccuracy();
+			totalPrecision += countingMap.get(className).getPrecision();
+			totalRecall += countingMap.get(className).getRecall();
+		}
+		totalAccuracy=totalAccuracy/(double)countingMap.size();
+		totalPrecision=totalPrecision/(double)countingMap.size();
+		totalRecall=totalRecall/(double)countingMap.size();
+		
+		System.out.println("Total accuracy: "+totalAccuracy);
+		System.out.println("Total precision: "+totalPrecision);
+		System.out.println("Total recall: "+totalRecall);
+	}
+	
 	//將testing data丟入建好的decision tree做分類，推測其target_class
-	public static String passTree(Treenode node, String[] test_data){
+	public String passTree(Treenode node, String[] test_data){
 		String returnString;
 		if(node.child.size()!=0){
 			boolean flag = false;  //flag set true if the testing data find its attr(a_best in that level) in child 
