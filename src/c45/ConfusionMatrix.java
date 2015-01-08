@@ -1,10 +1,10 @@
 package c45;
 
 public class ConfusionMatrix {
-	public int TP;
-	public int TN;
-	public int FP;
-	public int FN;
+	private int TP;
+	private int TN;
+	private int FP;
+	private int FN;
 	
 	ConfusionMatrix(){
 		TP=0;

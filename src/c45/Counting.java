@@ -37,23 +37,23 @@ public class Counting {
 	}
 	
 	
-	public boolean isCorrect(String[] s){
-		String predictClass = passTree(Classification.root, s);
+	public boolean isCorrect(String[] test_data){
+		String predictClass = passTree(Classification.root, test_data);
 		//System.out.println(predictClass);
 		
-		if(s[target_Index].equals(predictClass)){				//猜對: 正確的類TP++,其他類TN++
-			this.countingMap.get(s[target_Index]).addTP();
+		if(test_data[target_Index].equals(predictClass)){				//猜對: 正確的類TP++,其他類TN++
+			this.countingMap.get(test_data[target_Index]).addTP();
 			for(String className: countingMap.keySet()){
-				if(!className.equals(s[target_Index])){
+				if(!className.equals(test_data[target_Index])){
 					this.countingMap.get(className).addTN();
 				}
 			}
 			return true;
 		}else{													//猜錯: 實際類FN++,推測類FP++,其他類TN++
-			this.countingMap.get(s[target_Index]).addFN();
+			this.countingMap.get(test_data[target_Index]).addFN();
 			this.countingMap.get(predictClass).addFP();
 			for(String className: countingMap.keySet()){
-				if(!className.equals(s[target_Index]) && !className.equals(predictClass)){
+				if(!className.equals(test_data[target_Index]) && !className.equals(predictClass)){
 					this.countingMap.get(className).addTN();
 				}
 			}
