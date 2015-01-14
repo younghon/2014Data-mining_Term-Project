@@ -4,7 +4,7 @@ public class Feature {
 	String name;
 	int feature_index;
 	boolean continuous;
-	int split_value=-1;
+	double split_value=-1;
 	
 	Feature(String name, boolean continuous){
 		this.name = name;
@@ -21,10 +21,10 @@ public class Feature {
 	public boolean isContinuous() {
 		return continuous;
 	}
-	public void setSplit_value(int split_value) {
+	public void setSplit_value(double split_value) {
 		this.split_value = split_value;
 	}
-	public int getSplit_value() {
+	public double getSplit_value() {
 		return split_value;
 	}
 	

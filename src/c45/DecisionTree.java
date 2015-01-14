@@ -76,16 +76,16 @@ public class DecisionTree extends JPanel implements TreeSelectionListener {
 
 	private static void createNodes(DefaultMutableTreeNode top, Treenode root) {
         DefaultMutableTreeNode newTop = null;
- 
+        
         for(int i=0;i<root.child.size();i++){
-        	if(root.child.get(i).a_best == -1){
-        		//continue;
+        	if(root.child.get(i).a_best == -1){	
+        		newTop = new DefaultMutableTreeNode(root.candidate_feature.get(root.best_list_index).getName() + "   (" + root.child.get(i).attrinNode + "): " + root.child.get(i).leafnode_class);
+        	}else{
+        		newTop = new DefaultMutableTreeNode(root.candidate_feature.get(root.best_list_index).getName() + "   (" + root.child.get(i).attrinNode + ")");
         	}
-        	newTop = new DefaultMutableTreeNode(root.candidate_feature.get(root.best_list_index).getName() + "   (" + root.child.get(i).attrinNode + ")");
         	top.add(newTop);
         	createNodes(newTop, root.child.get(i));
         }
- 
     }
 	
 	@Override

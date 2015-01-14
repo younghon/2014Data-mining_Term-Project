@@ -61,7 +61,7 @@ public class Counting {
 		}
 	}
 	
-	public void getResult(){
+	public String getResult(){
 		double totalAccuracy=0.0;
 		double totalPrecision=0.0;
 		double totalRecall=0.0;
@@ -77,6 +77,7 @@ public class Counting {
 		System.out.println("Total accuracy: "+totalAccuracy);
 		System.out.println("Total precision: "+totalPrecision);
 		System.out.println("Total recall: "+totalRecall);
+		return "Total accuracy: "+totalAccuracy+"\nTotal precision: "+totalPrecision+"\nTotal recall: "+totalRecall;
 	}
 	
 	//將testing data丟入建好的decision tree做分類，推測其target_class
@@ -96,7 +97,7 @@ public class Counting {
 				}
 			}else if(node.candidate_feature.get(node.best_list_index).isContinuous()){
 			//數值型pass
-				if(Integer.parseInt(test_data[node.a_best])<=Integer.parseInt(node.child.get(0).attrinNode.split("<=")[1])){
+				if(Double.parseDouble(test_data[node.a_best])<=Double.parseDouble(node.child.get(0).attrinNode.split("<=")[1])){
 					node = node.child.get(0);
 				}else{
 					node = node.child.get(1);

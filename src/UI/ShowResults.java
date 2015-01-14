@@ -4,6 +4,7 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JMenuBar;
@@ -26,12 +27,16 @@ import javax.swing.SwingConstants;
 import javax.swing.JTree;
 import javax.swing.JTextArea;
 
+import c45.Treenode;
+import javax.swing.ScrollPaneConstants;
+
 
 public class ShowResults extends JFrame {
 
 	private JPanel contentPane;
 	private DefaultListModel leftListModel;
 	private DefaultListModel rightListModel;
+	static DefaultMutableTreeNode Top;
 	
 	/**
 	 * Launch the application.
@@ -40,7 +45,7 @@ public class ShowResults extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					ShowResults frame = new ShowResults("");
+					ShowResults frame = new ShowResults("", null);
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -52,7 +57,7 @@ public class ShowResults extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public ShowResults(String info) {
+	public ShowResults(String info, Treenode root) {
 		setTitle("DMFinal");
 		setResizable(false);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -90,39 +95,35 @@ public class ShowResults extends JFrame {
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		
-		JTree tree = new JTree();
-		tree.setBounds(50, 61, 200, 249);
-		contentPane.add(tree);
+		Top = new DefaultMutableTreeNode("root");
+		createNodes(Top, root);
+		
+		JScrollPane scrollPane_1 = new JScrollPane();
+		scrollPane_1.setBounds(45, 51, 505, 249);
+		contentPane.add(scrollPane_1);
+		JTree Show_DecisionTree = new JTree(Top);
+		scrollPane_1.setViewportView(Show_DecisionTree);
 		
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(350, 62, 200, 248);
+		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		scrollPane.setBounds(45, 343, 505, 157);
 		contentPane.add(scrollPane);
 		
 		JTextArea txtrTotalTime = new JTextArea();
 		scrollPane.setViewportView(txtrTotalTime);
-		txtrTotalTime.setText("Test file path : C:\\\\test.txt\r\n\r\n----------------------------\r\nTotal time : 100000ms\r\nRecall : 101%\r\nPrecision : 101%\r\nAccuracy : 101%\r\nTP rate : 101%\r\nFP rate : 101%");
+		txtrTotalTime.setText(info);
 		
 		JLabel leftLabel = new JLabel("Decision Tree");
 		leftLabel.setFont(new Font("微軟正黑體", Font.BOLD, 14));
 		leftLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		leftLabel.setBounds(50, 20, 200, 31);
+		leftLabel.setBounds(10, 20, 162, 31);
 		contentPane.add(leftLabel);
 		
 		JLabel rightLabel = new JLabel("Information");
 		rightLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		rightLabel.setFont(new Font("微軟正黑體", Font.BOLD, 14));
-		rightLabel.setBounds(378, 20, 134, 31);
+		rightLabel.setBounds(31, 316, 116, 31);
 		contentPane.add(rightLabel);
-		
-		JButton btnNewButton_1 = new JButton("Testing");
-		btnNewButton_1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				
-			}
-		});
-		btnNewButton_1.setFont(new Font("微軟正黑體", Font.BOLD, 18));
-		btnNewButton_1.setBounds(228, 337, 141, 57);
-		contentPane.add(btnNewButton_1);
 		
 		leftListModel = new DefaultListModel();
 		
@@ -131,4 +132,18 @@ public class ShowResults extends JFrame {
 
 		
 	}
+	
+	private static void createNodes(DefaultMutableTreeNode top, Treenode root) {
+        DefaultMutableTreeNode newTop = null;
+        
+        for(int i=0;i<root.child.size();i++){
+        	if(root.child.get(i).a_best == -1){	
+        		newTop = new DefaultMutableTreeNode(root.candidate_feature.get(root.best_list_index).getName() + "   (" + root.child.get(i).attrinNode + "): " + root.child.get(i).leafnode_class);
+        	}else{
+        		newTop = new DefaultMutableTreeNode(root.candidate_feature.get(root.best_list_index).getName() + "   (" + root.child.get(i).attrinNode + ")");
+        	}
+        	top.add(newTop);
+        	createNodes(newTop, root.child.get(i));
+        }
+    }
 }

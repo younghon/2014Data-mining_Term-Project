@@ -166,11 +166,12 @@ public class ChooseConFrame extends JFrame {
 				/* call ID3 or C4.5 */
 				c45.Classification c45 = new Classification(ChooseConFrame.this.trainingFile, ChooseConFrame.this.testingFile, targetText.getText().trim(), isAttributeContinous);
 				c45.main(null);
-				final String result = ID3.run(ChooseConFrame.this.trainingFile, ChooseConFrame.this.testingFile, targetText.getText().trim(), isAttributeContinous);
+				final String result = c45.getResult();
+				final c45.Treenode c45Root = c45.getRoot();
 				EventQueue.invokeLater(new Runnable() {
 					public void run() {
 						try {
-							ShowResults frame = new ShowResults(result);
+							ShowResults frame = new ShowResults(result,c45Root);
 							frame.setVisible(true);
 							setVisible(false);
 						} catch (Exception e) {

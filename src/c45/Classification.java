@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import com.opencsv.CSVReader;
 
 
@@ -24,6 +25,11 @@ public class Classification {
 	static ArrayList<String> Header = new ArrayList<String>();
 	static HashMap<Integer,String[]> data = new HashMap<Integer,String[]>();
 	static Treenode root;
+	static long startTime;
+	static long endTime;
+	static String buildTime;
+	static String textTime;
+	static Counting c;
 	
 	public Classification(String trainingFile,String testingFile, String targetAttr, Map<String, Boolean> isAttributeContinous) {
 		finPath_training=trainingFile;
@@ -45,8 +51,11 @@ public class Classification {
 				}
 			}
 			
+			int transactionNo=0;
 			while ((nextLine = reader.readNext()) != null) {
-		    	data.put(Integer.parseInt(nextLine[0]),nextLine);
+				transactionNo++;
+				data.put(transactionNo,nextLine);
+				//data.put(Integer.parseInt(nextLine[0]),nextLine);		    	
 		    }	    
 		} catch(IOException e) {
 				e.printStackTrace();
@@ -69,7 +78,12 @@ public class Classification {
 		
 		//建立Decision tree model
 		root = new Treenode(id,candidate_feature,"");
+		startTime = System.currentTimeMillis();
+		System.out.println("Starting growth decision tree...");
 		root.dosomething();
+		endTime = System.currentTimeMillis();
+		buildTime = "Build decision tree takes "+(endTime - startTime)/1000.0+" secs.\n";
+		System.out.println("Build decision tree takes "+(endTime - startTime)/1000.0+" secs.");
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 DecisionTree.createAndShowGUI(root);
@@ -84,14 +98,28 @@ public class Classification {
 		    String[] nextLine = reader.readNext();
 		    
 		    //對testing file的每筆資料做分類並預測,計算統計結果
-		    Counting c = new Counting(finPath_testing,target_class);
+		    startTime = System.currentTimeMillis();
+		    c = new Counting(finPath_testing,target_class);
 			while ((nextLine = reader.readNext()) != null) {
 				c.isCorrect(nextLine);
-		    }	
+		    }
+			endTime =System.currentTimeMillis();
+			textTime = "Testing takes "+ (endTime - startTime)/1000.0 +" secs.\n";
+			System.out.println("Testing takes "+ (endTime - startTime)/1000.0 +" secs.");
 			c.getResult();
 		} catch(IOException e) {
 			e.printStackTrace();
-		}		
+		}	
+		
+		
+	}
+	
+	public String getResult(){
+		return buildTime + c.getResult()+ "\n" +textTime;
+	}
+	
+	public Treenode getRoot(){
+		return root;
 	}
 	
 }

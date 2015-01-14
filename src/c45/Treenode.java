@@ -11,7 +11,7 @@ import c45.*;
 public class Treenode {
 	public Integer[] id;
 	public String attrinNode;
-	List<Feature> candidate_feature = new ArrayList<Feature>();
+	public List<Feature> candidate_feature = new ArrayList<Feature>();
 	
 	public double entropy = 0.0;
 	public int a_best=-1;					//在此node中最佳分類屬性同一個class
@@ -147,19 +147,26 @@ public class Treenode {
 		int attr_index = feature.getFeature_index();
 		List<Pair> tmp = new ArrayList<Pair>();
 		for(int i=0;i<id.length;i++){
-			Integer id_attr = Integer.parseInt(Classification.data.get(id[i])[attr_index]);
+			Double id_attr = Double.parseDouble(Classification.data.get(id[i])[attr_index]);
 			String id_class = Classification.data.get(id[i])[Classification.target_class_Index];
 			tmp.add(new Pair(id_attr, id_class));
 		}
 		
 		Collections.sort(tmp, new Comparator<Pair>() {
 		            public int compare(Pair o1, Pair o2) {
-		                return o1.getId_attr()-o2.getId_attr();
+		            	if(o1.getId_attr()<o2.getId_attr()){
+		            		return -1;
+		            	}else if(o1.getId_attr()==o2.getId_attr()){
+		            		return 0;
+		            	}else{
+		            		return 1;
+		            	}
+
 		            }
 		});
 		
 		double max_Gain=-1;
-		int compare = tmp.get(0).getId_attr();
+		double compare = tmp.get(0).getId_attr();
 		for(int i=0;i<tmp.size();i++){
 			if(tmp.get(i).getId_attr()==tmp.get(tmp.size()-1).getId_attr()){
 				break;
@@ -288,12 +295,12 @@ public class Treenode {
 			}else{
 				ArrayList<Integer> addinto1Id = new ArrayList<Integer>();
 				ArrayList<Integer> addinto2Id = new ArrayList<Integer>();
-				int compareValue = candidate_feature.get(best_list_index).getSplit_value();
+				double compareValue = candidate_feature.get(best_list_index).getSplit_value();
 				for(int i=0;i<id.length;i++){				//<=split_value一類; >split_value一類
 					String id_attr = Classification.data.get(id[i])[a_best];
-					if(Integer.parseInt(id_attr) <= compareValue){
+					if(Double.parseDouble(id_attr) <= compareValue){
 						addinto1Id.add(id[i]);
-					}else if(Integer.parseInt(id_attr)>compareValue){
+					}else if(Double.parseDouble(id_attr)>compareValue){
 						addinto2Id.add(id[i]);
 					}
 				}
